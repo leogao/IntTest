@@ -858,13 +858,34 @@ static void pciext_cleanup_device(struct pciext_dev_s *pciext_dev)
 	return;
 }
 
+#if defined (CONFIG_X86_32)
+#define rdtsclll(val) \
+     __asm__ __volatile__("rdtsc" : "=A" (val))
+
+#elif defined (CONFIG_X86_64)
+#define rdtsclll(val) do { \
+    unsigned int a,d; \
+    asm volatile("rdtsc" : "=a" (a), "=d" (d)); \
+    (val) = ((unsigned long)a) | (((unsigned long)d)<<32); \
+} while(0)
+#endif
+
+typedef unsigned long long cycles_t;
+static inline cycles_t readTimestampCounter (void)
+{
+        unsigned long long ret;
+        rdtsclll(ret);
+        return ret;
+}
+
+#if 0
 static uint64_t readTimestampCounter(void)
 {
 	uint64_t a, d;
 	asm volatile("rdtsc" : "=a" (a), "=d" (d));
 	return (((uint64_t)a) | (((uint64_t)d) << 32)); 
 }
-
+#endif
 
 /******************************************************************
  **	       INTERRUPTS				    ***
